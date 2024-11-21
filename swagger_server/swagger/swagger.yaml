@@ -1,0 +1,116 @@
+openapi: 3.0.3
+info:
+  title: Static Checking Service - OpenAPI 3.0
+  description: |-
+    This is an API description for a SEQ 2.0 compatible static checking service using the OpenAPI 3.0 specification. You can find out more about
+    Swagger at [https://swagger.io](https://swagger.io).
+  contact:
+    email: aerie-support@googlegroups.com
+  license:
+    name: MIT
+    url: https://github.com/NASA-AMMOS/aerie/blob/develop/LICENSE
+  version: 1.0.11
+servers:
+- url: /
+tags:
+- name: Static Checks
+  description: Everything to do with checking sequences for errors without executing
+    them
+  externalDocs:
+    description: Find out more
+    url: http://swagger.io
+paths:
+  /runStaticChecks:
+    post:
+      tags:
+      - Static Checks
+      summary: Run static checks
+      description: "Given a sequence's name and contents, return a list of check results"
+      operationId: run_static_checks
+      requestBody:
+        description: Run static checks
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/runStaticChecks_body'
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200'
+        "400":
+          description: Invalid input
+        "422":
+          description: Validation exception
+      security:
+      - aerie_token: []
+      x-openapi-router-controller: swagger_server.controllers.static_checks_controller
+components:
+  schemas:
+    Result:
+      type: object
+      properties:
+        rule_id:
+          type: string
+          example: GNC_0001
+        level:
+          type: string
+          enum:
+          - PASS
+          - WARNING
+          - VIOLATED
+          - ERROR
+          - INFO
+        sequence_location:
+          $ref: '#/components/schemas/Result_sequence_location'
+      example:
+        rule_id: GNC_0001
+        level: PASS
+        sequence_location:
+          line: 0
+    runStaticChecks_body:
+      type: object
+      properties:
+        sequence_name:
+          type: string
+        sequence_contents:
+          type: string
+          example: |
+            @METADATA
+            @LOCALS
+
+            FSW_CMD_1 arg1 arg2
+    inline_response_200:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Result'
+      example:
+        results:
+        - rule_id: GNC_0001
+          level: PASS
+          sequence_location:
+            line: 0
+        - rule_id: GNC_0001
+          level: PASS
+          sequence_location:
+            line: 0
+    Result_sequence_location:
+      type: object
+      properties:
+        line:
+          type: integer
+      example:
+        line: 0
+  securitySchemes:
+    aerie_token:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      x-bearerInfoFunc: swagger_server.controllers.authorization_controller.check_aerie_token
+
